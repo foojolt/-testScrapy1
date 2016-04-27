@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import scrapy
 from gsxtCrawl import fromCurlIterator, fromCurlSingle
 from gsxtCrawl import loadListTasks
@@ -8,15 +9,9 @@ import logging
 import sys
 import json
 
-default_encoding = 'utf-8'
-if sys.getdefaultencoding() != default_encoding:
-    reload(sys)
-    sys.setdefaultencoding(default_encoding)
-
 class ListSpider(scrapy.Spider):
 
     name = "list"
-
 
     def start_requests(self):
         tasks = loadListTasks( self.taskFile if hasattr( self, "taskFile" ) else "taskFile" )
@@ -24,7 +19,8 @@ class ListSpider(scrapy.Spider):
             if hasattr( self, "region" ) and self.region != task["region"]:
                 logging.debug( "skip region: %s", task )
                 continue
-            for req in fromCurlIterator( task["listCompanyCurlTemplate"], task["listParameters"], { "task": task } ):
+            for req in fromCurlIterator( task["listCompanyCurlTemplate"], 
+                            task["listParameters"], { "task": task } ):
                 req.callback  = self.parseList
                 yield req
 

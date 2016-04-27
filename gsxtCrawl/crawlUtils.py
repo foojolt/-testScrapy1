@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from scrapy import Request
 import json
 import re
@@ -11,17 +13,15 @@ def _createCurlCmdParser():
     parser.add_argument( "--data", action="store", dest="data" )
     parser.add_argument( "--compressed", action="store_true", dest="compressed" )
     return parser
+
 _curlArgParser = _createCurlCmdParser()
 
 def fromCurlSingle( curlCmd, meta ):
-
     argv = shlex.split( curlCmd )
-
     cmdOpts = _curlArgParser.parse_args( argv[2:] )
     headers = {}
     for headStr in cmdOpts.headers:
         headers[ headStr[0:headStr.index(":")] ] = headStr[ headStr.index(":")+1:]
-    
     url = argv[1]
     if cmdOpts.data:
         return Request( url, method="POST", headers = headers, body = cmdOpts.data, meta = meta )
@@ -51,7 +51,8 @@ def loadListTasks(taskFile):
             #pre check
             
             task["listExtractRegex"] = re.compile( task["listExtractRegex"], re.M | re.DOTALL )
-            task["singleExtractRegex"] = [ re.compile( pt, re.M | re.DOTALL ) for pt in  task["singleExtractRegex"].split( "<-ps->" )]
+            task["singleExtractRegex"] = [ re.compile( pt, re.M | re.DOTALL ) for pt in 
+                                            task["singleExtractRegex"].split( "<-ps->" )]
             yield task
             
 
