@@ -8,20 +8,37 @@ import pdb
 import logging
 import sys
 import json
+import time
+
+logger = logging.getLogger(__name__)
 
 class ListSpider(scrapy.Spider):
 
     name = "list"
 
+    def resendWithTTL(self, err):
+
+        res = err.value.response
+        if res.status != 403:
+            return
+        req = res.request
+        logger.warn( "found 403: retry request %s",  req.url)
+        time.sleep( int(self.resendTTL) if hasattr( self, "resendTTL" ) else (30 * 60) )
+        newReq = req.copy()
+        newReq.dont_filter = True
+        yield newReq
+
     def start_requests(self):
         tasks = loadListTasks( self.taskFile if hasattr( self, "taskFile" ) else "taskFile" )
         for task in tasks:
-            if hasattr( self, "region" ) and self.region != task["region"]:
+            if hasattr( self, "region" ) and task["region"] not in self.region.split(','):
                 logging.debug( "skip region: %s", task )
                 continue
             for req in fromCurlIterator( task["listCompanyCurlTemplate"], 
-                            task["listParameters"], { "task": task } ):
+                            task["listParameters"], { "task": task }, 0 ):
                 req.callback  = self.parseList
+                # req.errback = self.resendWithTTL
+                time.sleep(0)
                 yield req
 
     def parseList( self, response ):
@@ -35,7 +52,7 @@ class ListSpider(scrapy.Spider):
             params = singleCompany.groupdict()
             logging.debug("found company info: %s", params)
             curlCmd = task["singleCompanyCurlTemplate"].format( ** params )
-            req = fromCurlSingle( curlCmd, { "task": task, "params": params } )
+            req = fromCurlSingle( curlCmd, { "task": task, "params": params }, 100 )
             req.callback = self.parseSingle
             yield req
 
@@ -65,6 +82,7 @@ class ListSpider(scrapy.Spider):
         body = response.body.decode("utf8")
         regexArr = task["singleExtractRegex"]
         
+        # pdb.set_trace()
         if not body:
             return
 
@@ -83,7 +101,7 @@ class ListSpider(scrapy.Spider):
         extractItem["taskType"] = "singleInfo"
         extractItem["name"] = name
         extractItem["region"] = region
-        extractItem["props"] = json.dumps(props, ensure_ascii=False)
+        extractItem["props"] = props
         yield extractItem
 
 

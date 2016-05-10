@@ -16,7 +16,7 @@ def _createCurlCmdParser():
 
 _curlArgParser = _createCurlCmdParser()
 
-def fromCurlSingle( curlCmd, meta ):
+def fromCurlSingle( curlCmd, meta, priority ):
     argv = shlex.split( curlCmd )
     cmdOpts = _curlArgParser.parse_args( argv[2:] )
     headers = {}
@@ -24,15 +24,15 @@ def fromCurlSingle( curlCmd, meta ):
         headers[ headStr[0:headStr.index(":")] ] = headStr[ headStr.index(":")+1:]
     url = argv[1]
     if cmdOpts.data:
-        return Request( url, method="POST", headers = headers, body = cmdOpts.data, meta = meta )
+        return Request( url, method="POST", headers = headers, body = cmdOpts.data, meta = meta, priority = priority )
     else:
-        return Request( url, headers = headers, meta = meta )
+        return Request( url, headers = headers, meta = meta, priority = priority )
 
-def fromCurlIterator( curlCmdTemplate, paramsIterator, meta ):
+def fromCurlIterator( curlCmdTemplate, paramsIterator, meta, priority ):
     for params in paramsIterator:
         curlCmd = curlCmdTemplate.format( **params )
         meta["params"] = params
-        yield fromCurlSingle(curlCmd, meta)
+        yield fromCurlSingle(curlCmd, meta, priority)
 
 def pageIter( minPage, maxPage ):
     for page in xrange( minPage, maxPage+1 ):

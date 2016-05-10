@@ -8,4 +8,4 @@ if sys.getdefaultencoding() != default_encoding:
     sys.setdefaultencoding(default_encoding)
 
 from gsxtCrawl.crawlUtils import fromCurlSingle, fromCurlIterator, loadListTasks
-
+from gsxtCrawl.hiveUtils import toHiveMap, toHiveRow
